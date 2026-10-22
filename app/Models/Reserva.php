@@ -89,6 +89,9 @@ class Reserva extends Model
 
     private function prepararReserva(): void
     {
+        // La creación desde Eloquent debe respetar el mismo estado confirmado que define la base.
+        $this->estado ??= self::ESTADO_CONFIRMADA;
+
         if (! is_numeric($this->duracion_horas) || $this->duracion_horas < 1 || $this->duracion_horas > 4) {
             throw new DomainException('La duración debe estar entre 1 y 4 horas.');
         }
