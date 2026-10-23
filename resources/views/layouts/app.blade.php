@@ -114,6 +114,45 @@
             border: 1px solid rgba(255, 255, 255, 0.8);
         }
 
+        .auth-transition {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: grid;
+            place-items: center;
+            background: radial-gradient(circle at center, #103c2d 0%, #071b15 48%, #04100c 100%);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 260ms ease, visibility 260ms ease;
+        }
+        .auth-transition.is-active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .auth-transition__content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.25rem;
+        }
+        .auth-transition__logo {
+            width: min(72vw, 340px);
+            max-height: 42vh;
+            object-fit: contain;
+            filter: drop-shadow(0 0 38px rgba(52, 211, 153, 0.4));
+            transform: scale(0.65);
+            transition: transform 520ms cubic-bezier(0.2, 0.85, 0.25, 1);
+        }
+        .auth-transition.is-active .auth-transition__logo {
+            transform: scale(1);
+        }
+        .auth-transition__message {
+            color: #d1fae5;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
         /* Smooth scrollbars */
         ::-webkit-scrollbar {
             width: 8px;
@@ -142,6 +181,13 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+    <div id="auth-transition" class="auth-transition" aria-hidden="true" role="status" aria-live="polite">
+        <div class="auth-transition__content">
+            <img src="{{ asset('images/reserva-logo-transparente.png') }}" alt="JuegaYa" class="auth-transition__logo">
+            <span id="auth-transition-message" class="auth-transition__message">Entrando a JuegaYa…</span>
+        </div>
+    </div>
 
     <!-- Ambient sports backdrop mesh -->
     <div class="pointer-events-none fixed inset-0 -z-10 ambient-mesh" aria-hidden="true"></div>
@@ -407,6 +453,45 @@
         document.addEventListener('DOMContentLoaded', () => {
             const botonMenu = document.getElementById('menu-movil');
             const navegacion = document.getElementById('navegacion');
+            const transicion = document.getElementById('auth-transition');
+            const mensajeTransicion = document.getElementById('auth-transition-message');
+            let navegandoAAuth = false;
+
+            const esDestinoAuth = (url) => ['/login', '/registro'].includes(url.pathname.replace(/\/$/, ''));
+            const mostrarTransicion = (url) => {
+                if (navegandoAAuth || !transicion) return;
+
+                navegandoAAuth = true;
+                if (mensajeTransicion) {
+                    mensajeTransicion.textContent = url?.pathname.includes('registro')
+                        ? 'Preparando tu cuenta…'
+                        : 'Entrando a JuegaYa…';
+                }
+                transicion.classList.add('is-active');
+                transicion.setAttribute('aria-hidden', 'false');
+            };
+
+            document.addEventListener('click', (event) => {
+                const enlace = event.target instanceof Element ? event.target.closest('a[href]') : null;
+                if (!enlace || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+                const destino = new URL(enlace.href, window.location.href);
+                if (destino.origin !== window.location.origin || !esDestinoAuth(destino) || destino.pathname === window.location.pathname) return;
+
+                event.preventDefault();
+                mostrarTransicion(destino);
+                window.setTimeout(() => window.location.assign(destino.href), 560);
+            });
+
+            document.addEventListener('submit', (event) => {
+                const formulario = event.target;
+                if (!(formulario instanceof HTMLFormElement)) return;
+
+                const destino = new URL(formulario.action, window.location.href);
+                if (destino.origin === window.location.origin && esDestinoAuth(destino)) {
+                    mostrarTransicion(destino);
+                }
+            });
             
             botonMenu?.addEventListener('click', () => {
                 const abierto = botonMenu.getAttribute('aria-expanded') === 'true';
