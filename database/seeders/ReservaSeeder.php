@@ -5,51 +5,51 @@ namespace Database\Seeders;
 use App\Models\Cancha;
 use App\Models\Cliente;
 use App\Models\Reserva;
-use Carbon\CarbonImmutable;
+use Carbon\Carbon;
 use DomainException;
 use Illuminate\Database\Seeder;
-use RuntimeException;
 
 class ReservaSeeder extends Seeder
 {
     private const CANTIDAD = 150;
-
-    private const INTENTOS_MAXIMOS = 5000;
+    private const MAX_INTENTOS = 5000;
 
     public function run(): void
     {
-        $clientes = Cliente::query()->pluck('id')->all();
-        $canchas = Cancha::query()->pluck('id')->all();
-        $canceladas = (int) round(self::CANTIDAD * 0.10);
-
-        for ($i = 0; $i < $canceladas; $i++) {
-            Reserva::factory()->cancelada()->create([
-                'cliente_id' => fake()->randomElement($clientes),
-                'cancha_id' => fake()->randomElement($canchas),
-                'fecha' => CarbonImmutable::today()->subDays(fake()->numberBetween(1, 30))->toDateString(),
-            ]);
-        }
-
-        $confirmadasObjetivo = self::CANTIDAD - $canceladas;
-        $confirmadasCreadas = 0;
+        $clienteIds = Cliente::query()->pluck('id')->all();
+        $canchaIds = Cancha::query()->pluck('id')->all();
+        $creadas = 0;
         $intentos = 0;
 
-        while ($confirmadasCreadas < $confirmadasObjetivo && $intentos < self::INTENTOS_MAXIMOS) {
+        while ($creadas < self::CANTIDAD && $intentos < self::MAX_INTENTOS) {
             $intentos++;
+            $cancelada = $creadas % 10 === 0;
+
+            $datos = [
+                'cliente_id' => fake()->randomElement($clienteIds),
+                'cancha_id' => fake()->randomElement($canchaIds),
+            ];
+
+            if ($cancelada) {
+                // Estas reservas ya pasaron; se registran canceladas sin aplicar la regla de cancelaci¢n futura.
+                $fecha = fake()->dateTimeBetween('-30 days', '-1 day')->format('Y-m-d');
+                $datos += [
+                    'fecha' => $fecha,
+                    'estado' => Reserva::ESTADO_CANCELADA,
+                    'cancelada_en' => Carbon::parse($fecha)->subDay(),
+                ];
+            }
 
             try {
-                Reserva::factory()->create([
-                    'cliente_id' => fake()->randomElement($clientes),
-                    'cancha_id' => fake()->randomElement($canchas),
-                ]);
-                $confirmadasCreadas++;
+                Reserva::factory()->create($datos);
+                $creadas++;
             } catch (DomainException) {
-                // Los solapes son esperables al generar horarios aleatorios y se vuelven a intentar.
+                // Una coincidencia de horario se intenta de nuevo con otro cliente, cancha u hora.
             }
         }
 
-        if ($confirmadasCreadas < $confirmadasObjetivo) {
-            throw new RuntimeException("Se crearon {$confirmadasCreadas} de {$confirmadasObjetivo} reservas confirmadas tras {$intentos} intentos.");
+        if ($creadas < self::CANTIDAD) {
+            throw new DomainException("No se pudieron crear las {$creadas} reservas tras ".self::MAX_INTENTOS.' intentos.');
         }
     }
 }

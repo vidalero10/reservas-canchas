@@ -21,7 +21,6 @@ class ReservaFactory extends Factory
             'hora_inicio' => sprintf('%02d:00:00', fake()->numberBetween(8, 20)),
             'duracion_horas' => fake()->randomElement([1, 2]),
             'estado' => Reserva::ESTADO_CONFIRMADA,
-            'cancelada_en' => null,
         ];
     }
 

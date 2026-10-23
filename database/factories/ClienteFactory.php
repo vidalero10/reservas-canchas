@@ -12,12 +12,12 @@ class ClienteFactory extends Factory
 
     public function definition(): array
     {
-        $faker = fake('es_ES');
+        $prefijo = fake()->randomElement(['6', '7']);
 
         return [
-            'ci' => $faker->unique()->numerify('#######'),
-            'nombre' => $faker->name(),
-            'telefono' => fake()->randomElement(['6', '7']).fake()->numerify('#######'),
+            'ci' => (string) fake()->unique()->numberBetween(1000000, 9999999),
+            'nombre' => fake('es_ES')->name(),
+            'telefono' => $prefijo.fake()->numerify('#######'),
         ];
     }
 }

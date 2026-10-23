@@ -9,7 +9,7 @@ class DeporteSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (['Fútbol 5', 'Básquet', 'Vóley'] as $nombre) {
+        foreach (["F\u{00FA}tbol 5", "B\u{00E1}squet", "V\u{00F3}ley"] as $nombre) {
             Deporte::firstOrCreate(['nombre' => $nombre]);
         }
     }

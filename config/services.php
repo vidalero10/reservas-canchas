@@ -14,6 +14,10 @@ return [
     |
     */
 
+    'whatsapp' => [
+        'reservas' => env('WHATSAPP_RESERVAS', '59172947723'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

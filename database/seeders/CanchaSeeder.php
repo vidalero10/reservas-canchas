@@ -12,24 +12,24 @@ class CanchaSeeder extends Seeder
     {
         $deportes = Deporte::query()->pluck('id', 'nombre');
 
-        $configuracion = [
-            ['nombre' => 'Cancha 1', 'deporte' => 'Fútbol 5', 'diurna' => 90, 'nocturna' => 130],
-            ['nombre' => 'Cancha 2', 'deporte' => 'Fútbol 5', 'diurna' => 100, 'nocturna' => 140],
-            ['nombre' => 'Cancha 3', 'deporte' => 'Fútbol 5', 'diurna' => 80, 'nocturna' => 150],
-            ['nombre' => 'Cancha 4', 'deporte' => 'Básquet', 'diurna' => 60, 'nocturna' => 90],
-            ['nombre' => 'Cancha 5', 'deporte' => 'Básquet', 'diurna' => 60, 'nocturna' => 90],
-            ['nombre' => 'Cancha 6', 'deporte' => 'Básquet', 'diurna' => 60, 'nocturna' => 90],
-            ['nombre' => 'Cancha 7', 'deporte' => 'Vóley', 'diurna' => 50, 'nocturna' => 80],
-            ['nombre' => 'Cancha 8', 'deporte' => 'Vóley', 'diurna' => 50, 'nocturna' => 80],
+        $canchas = [
+            ["F\u{00FA}tbol 5", 80, 120],
+            ["F\u{00FA}tbol 5", 90, 130],
+            ["F\u{00FA}tbol 5", 100, 150],
+            ["B\u{00E1}squet", 60, 90],
+            ["B\u{00E1}squet", 60, 90],
+            ["B\u{00E1}squet", 60, 90],
+            ["V\u{00F3}ley", 50, 80],
+            ["V\u{00F3}ley", 50, 80],
         ];
 
-        foreach ($configuracion as $cancha) {
-            Cancha::updateOrCreate(
-                ['nombre' => $cancha['nombre']],
+        foreach ($canchas as $indice => [$deporte, $diurna, $nocturna]) {
+            Cancha::firstOrCreate(
+                ['nombre' => 'Cancha '.($indice + 1)],
                 [
-                    'deporte_id' => $deportes[$cancha['deporte']],
-                    'tarifa_diurna' => $cancha['diurna'],
-                    'tarifa_nocturna' => $cancha['nocturna'],
+                    'deporte_id' => $deportes[$deporte],
+                    'tarifa_diurna' => $diurna,
+                    'tarifa_nocturna' => $nocturna,
                     'activa' => true,
                 ],
             );

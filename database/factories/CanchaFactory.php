@@ -13,30 +13,19 @@ class CanchaFactory extends Factory
 
     public function definition(): array
     {
+        $deporte = fake()->randomElement(["F\u{00FA}tbol 5", "B\u{00E1}squet", "V\u{00F3}ley"]);
+        [$diurna, $nocturna] = match ($deporte) {
+            "B\u{00E1}squet" => [60, 90],
+            "V\u{00F3}ley" => [50, 80],
+            default => [fake()->numberBetween(80, 100), fake()->numberBetween(120, 150)],
+        };
+
         return [
-            'deporte_id' => Deporte::factory()->futbol5(),
-            'nombre' => 'Cancha '.fake()->unique()->numberBetween(1, 9999),
-            'tarifa_diurna' => fake()->numberBetween(80, 100),
-            'tarifa_nocturna' => fake()->numberBetween(120, 150),
+            'deporte_id' => Deporte::factory()->state(['nombre' => $deporte]),
+            'nombre' => 'Cancha '.fake()->unique()->numberBetween(1, 10000),
+            'tarifa_diurna' => $diurna,
+            'tarifa_nocturna' => $nocturna,
             'activa' => true,
         ];
-    }
-
-    public function basquet(): static
-    {
-        return $this->state(fn () => [
-            'deporte_id' => Deporte::factory()->basquet(),
-            'tarifa_diurna' => 60,
-            'tarifa_nocturna' => 90,
-        ]);
-    }
-
-    public function voley(): static
-    {
-        return $this->state(fn () => [
-            'deporte_id' => Deporte::factory()->voley(),
-            'tarifa_diurna' => 50,
-            'tarifa_nocturna' => 80,
-        ]);
     }
 }
