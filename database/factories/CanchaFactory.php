@@ -13,10 +13,10 @@ class CanchaFactory extends Factory
 
     public function definition(): array
     {
-        $deporte = fake()->randomElement(['F£tbol 5', 'B squet', 'V¢ley']);
+        $deporte = fake()->randomElement(["F\u{00FA}tbol 5", "B\u{00E1}squet", "V\u{00F3}ley"]);
         [$diurna, $nocturna] = match ($deporte) {
-            'B squet' => [60, 90],
-            'V¢ley' => [50, 80],
+            "B\u{00E1}squet" => [60, 90],
+            "V\u{00F3}ley" => [50, 80],
             default => [fake()->numberBetween(80, 100), fake()->numberBetween(120, 150)],
         };
 

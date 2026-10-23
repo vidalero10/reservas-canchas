@@ -17,16 +17,16 @@ class DeporteFactory extends Factory
 
     public function futbol5(): static
     {
-        return $this->state(fn () => ['nombre' => 'F£tbol 5']);
+        return $this->state(fn () => ['nombre' => "F\u{00FA}tbol 5"]);
     }
 
     public function basquet(): static
     {
-        return $this->state(fn () => ['nombre' => 'B squet']);
+        return $this->state(fn () => ['nombre' => "B\u{00E1}squet"]);
     }
 
     public function voley(): static
     {
-        return $this->state(fn () => ['nombre' => 'V¢ley']);
+        return $this->state(fn () => ['nombre' => "V\u{00F3}ley"]);
     }
 }

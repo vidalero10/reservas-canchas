@@ -5,11 +5,14 @@ namespace App\Models;
 use Carbon\Carbon;
 use DomainException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Reserva extends Model
 {
+    use HasFactory;
+
     public const ESTADO_CONFIRMADA = 'confirmada';
     public const ESTADO_CANCELADA = 'cancelada';
 
@@ -35,15 +38,8 @@ class Reserva extends Model
         });
     }
 
-    public function cliente(): BelongsTo
-    {
-        return $this->belongsTo(Cliente::class);
-    }
-
-    public function cancha(): BelongsTo
-    {
-        return $this->belongsTo(Cancha::class);
-    }
+    public function cliente(): BelongsTo { return $this->belongsTo(Cliente::class); }
+    public function cancha(): BelongsTo { return $this->belongsTo(Cancha::class); }
 
     public function scopeConfirmadas(Builder $query): Builder
     {
@@ -65,9 +61,9 @@ class Reserva extends Model
         $inicio = Carbon::parse($this->fecha)
             ->setTimeFromTimeString((string) $this->hora_inicio);
 
-        // Se exige un d¡a completo para dar tiempo a liberar y volver a ofrecer el horario.
+        // Un dia completo permite liberar y volver a ofrecer el horario.
         if ($inicio->lt(now()->addHours(24))) {
-            throw new DomainException('La reserva solo se puede cancelar con 24 horas o m s de anticipaci¢n.');
+            throw new DomainException('La reserva solo se puede cancelar con 24 horas o mas de anticipacion.');
         }
 
         $this->estado = self::ESTADO_CANCELADA;
@@ -78,21 +74,19 @@ class Reserva extends Model
     private function prepararReserva(): void
     {
         $duracion = (int) $this->duracion_horas;
-
         if ($duracion < 1 || $duracion > 4) {
-            throw new DomainException('La duraci¢n de la reserva debe ser de 1 a 4 horas.');
+            throw new DomainException('La duracion debe ser de 1 a 4 horas.');
         }
 
         $inicio = Carbon::parse((string) $this->hora_inicio);
         $inicioMinutos = ((int) $inicio->format('H')) * 60 + (int) $inicio->format('i');
-
         if ($inicioMinutos < 8 * 60 || $inicioMinutos >= 23 * 60) {
-            throw new DomainException('El horario de inicio debe estar entre las 08:00 y antes de las 23:00.');
+            throw new DomainException('El inicio debe ser desde las 08:00 y antes de las 23:00.');
         }
 
         $finMinutos = $inicioMinutos + ($duracion * 60);
         if ($finMinutos > 23 * 60) {
-            throw new DomainException('La reserva debe finalizar a m s tardar a las 23:00.');
+            throw new DomainException('La reserva debe terminar a mas tardar a las 23:00.');
         }
 
         $fin = $inicio->copy()->addHours($duracion);
@@ -114,7 +108,7 @@ class Reserva extends Model
         }
         $this->monto = number_format($montoCentavos / 100, 2, '.', '');
 
-        // Un ¡ndice unique solo detectar¡a duplicados exactos; los intervalos solapados se validan aqu¡.
+        // Un indice unique solo detecta duplicados exactos; aqui se revisan los solapes.
         $solapada = static::query()
             ->confirmadas()
             ->where('cancha_id', $this->cancha_id)
