@@ -15,48 +15,41 @@
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
             <a href="{{ route('inicio') }}" class="flex items-center gap-3" aria-label="Complejo La Paz, inicio">
                 <span class="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-600 text-lg font-extrabold text-white">LP</span>
-                <span>
-                    <span class="block font-display text-base font-extrabold tracking-tight">Complejo La Paz</span>
-                    <span class="block text-xs font-medium text-slate-500">Reservas deportivas</span>
-                </span>
+                <span><span class="block font-display text-base font-extrabold tracking-tight">Complejo La Paz</span><span class="block text-xs font-medium text-slate-500">Reservas deportivas</span></span>
             </a>
-            <nav class="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                <a href="{{ route('inicio') }}" class="rounded-full px-4 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950">Inicio</a>
-                <a href="{{ route('reservas.del_dia') }}" class="rounded-full px-4 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950">Reservas del d&iacute;a</a>
-                <a href="{{ route('reportes.ingresos') }}" class="rounded-full px-4 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950">Ingresos</a>
-                <a href="{{ route('reservas.create') }}" class="rounded-full bg-emerald-600 px-4 py-2 text-white shadow-sm transition hover:bg-emerald-700">Reservar cancha</a>
+            <nav class="flex flex-wrap items-center gap-1 text-sm font-semibold">
+                <a href="{{ route('inicio') }}" class="rounded-full px-4 py-2 text-slate-600 transition hover:bg-slate-100">Inicio</a>
+                @guest
+                    <a href="{{ route('login') }}" class="rounded-full px-4 py-2 text-slate-600 transition hover:bg-slate-100">Iniciar sesi&oacute;n</a>
+                    <a href="{{ route('register') }}" class="rounded-full bg-emerald-600 px-4 py-2 text-white transition hover:bg-emerald-700">Crear cuenta</a>
+                @else
+                    @if (auth()->user()->esAdministrador())
+                        <a href="{{ route('admin.reservas.del_dia') }}" class="rounded-full px-4 py-2 text-slate-600 transition hover:bg-slate-100">Agenda</a>
+                        <a href="{{ route('admin.canchas.index') }}" class="rounded-full px-4 py-2 text-slate-600 transition hover:bg-slate-100">Canchas</a>
+                        <a href="{{ route('admin.reportes.ingresos') }}" class="rounded-full px-4 py-2 text-slate-600 transition hover:bg-slate-100">Ingresos</a>
+                    @else
+                        <a href="{{ route('cliente.reservas.index') }}" class="rounded-full px-4 py-2 text-slate-600 transition hover:bg-slate-100">Mis reservas</a>
+                        <a href="{{ route('reservas.create') }}" class="rounded-full px-4 py-2 text-slate-600 transition hover:bg-slate-100">Reservar</a>
+                    @endif
+                    <span class="hidden px-2 text-xs text-slate-400 sm:inline">{{ auth()->user()->name }}</span>
+                    <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="rounded-full border border-slate-200 px-4 py-2 text-slate-600 transition hover:bg-slate-50">Salir</button></form>
+                @endguest
             </nav>
         </div>
     </header>
-
     @if (session('success'))
-        <div class="mx-auto mt-6 max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div role="status" class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-900">
-                {{ session('success') }}
-            </div>
-        </div>
+        <div class="mx-auto mt-6 max-w-7xl px-4 sm:px-6 lg:px-8"><div role="status" class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-900">{{ session('success') }}</div></div>
     @endif
     @if ($errors->any())
-        <div class="mx-auto mt-6 max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div role="alert" class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-900">
-                <p class="font-bold">Revisa los siguientes datos:</p>
-                <ul class="mt-2 list-inside list-disc space-y-1">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
+        <div class="mx-auto mt-6 max-w-7xl px-4 sm:px-6 lg:px-8"><div role="alert" class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-900">
+            <p class="font-bold">Revisa los siguientes datos:</p><ul class="mt-2 list-inside list-disc space-y-1">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+        </div></div>
     @endif
-
-    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        @yield('content')
-    </main>
-
+    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">@yield('content')</main>
     <footer class="border-t border-slate-200 bg-white">
         <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
             <p class="font-semibold text-slate-700">Complejo La Paz</p>
-            <p>Deporte, encuentro y buen juego.</p>
+            <p>Reservas deportivas &middot; La Paz, Bolivia</p>
         </div>
     </footer>
 </body>
