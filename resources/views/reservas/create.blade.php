@@ -49,7 +49,7 @@
         <form id="form-reserva" 
               method="POST" 
               action="{{ route('reservas.store') }}" 
-              data-url="{{ route('reservas.canchas_disponibles') }}" 
+              data-url="{{ route('reservas.canchas_disponibles', [], false) }}" 
               class="mt-6 space-y-8 rounded-[2.5rem] border border-slate-200/80 bg-white p-6 sm:p-10 shadow-lg shadow-slate-900/5">
             @csrf
 
