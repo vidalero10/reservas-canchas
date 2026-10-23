@@ -455,17 +455,21 @@
             const navegacion = document.getElementById('navegacion');
             const transicion = document.getElementById('auth-transition');
             const mensajeTransicion = document.getElementById('auth-transition-message');
-            let navegandoAAuth = false;
+            let navegando = false;
 
             const esDestinoAuth = (url) => ['/login', '/registro'].includes(url.pathname.replace(/\/$/, ''));
             const mostrarTransicion = (url) => {
-                if (navegandoAAuth || !transicion) return;
+                if (navegando || !transicion) return;
 
-                navegandoAAuth = true;
+                navegando = true;
                 if (mensajeTransicion) {
-                    mensajeTransicion.textContent = url?.pathname.includes('registro')
-                        ? 'Preparando tu cuenta…'
-                        : 'Entrando a JuegaYa…';
+                    if (url?.pathname.includes('registro')) {
+                        mensajeTransicion.textContent = 'Preparando tu cuenta…';
+                    } else if (url?.pathname.includes('login')) {
+                        mensajeTransicion.textContent = 'Entrando a JuegaYa…';
+                    } else {
+                        mensajeTransicion.textContent = 'Cargando JuegaYa…';
+                    }
                 }
                 transicion.classList.add('is-active');
                 transicion.setAttribute('aria-hidden', 'false');
@@ -476,7 +480,7 @@
                 if (!enlace || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
                 const destino = new URL(enlace.href, window.location.href);
-                if (destino.origin !== window.location.origin || !esDestinoAuth(destino) || destino.pathname === window.location.pathname) return;
+                if (destino.origin !== window.location.origin || !enlace.closest('header') || destino.pathname === window.location.pathname) return;
 
                 event.preventDefault();
                 mostrarTransicion(destino);
