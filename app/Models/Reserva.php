@@ -13,6 +13,7 @@ class Reserva extends Model
 {
     use HasFactory;
 
+    public const ESTADO_PENDIENTE = 'pendiente';
     public const ESTADO_CONFIRMADA = 'confirmada';
     public const ESTADO_CANCELADA = 'cancelada';
 
@@ -46,6 +47,16 @@ class Reserva extends Model
         return $query->where('estado', self::ESTADO_CONFIRMADA);
     }
 
+    public function scopePendientes(Builder $query): Builder
+    {
+        return $query->where('estado', self::ESTADO_PENDIENTE);
+    }
+
+    public function scopeBloqueanHorario(Builder $query): Builder
+    {
+        return $query->whereIn('estado', [self::ESTADO_PENDIENTE, self::ESTADO_CONFIRMADA]);
+    }
+
     public function scopeDelDia(Builder $query, mixed $fecha): Builder
     {
         return $query->whereDate('fecha', $fecha);
@@ -56,8 +67,47 @@ class Reserva extends Model
         return $query->where('cancha_id', $canchaId);
     }
 
+    public function confirmarPago(): void
+    {
+        if ($this->estado !== self::ESTADO_PENDIENTE) {
+            throw new DomainException('Solo se pueden confirmar reservas pendientes de pago.');
+        }
+
+        $otraReservaEnHorario = static::query()
+            ->bloqueanHorario()
+            ->where('id', '<>', $this->getKey())
+            ->where('cancha_id', $this->cancha_id)
+            ->whereDate('fecha', $this->fecha)
+            ->where('hora_inicio', '<', $this->hora_fin)
+            ->where('hora_fin', '>', $this->hora_inicio)
+            ->exists();
+
+        if ($otraReservaEnHorario) {
+            throw new DomainException('No se puede confirmar: otra reserva ya ocupa ese horario.');
+        }
+
+        $this->estado = self::ESTADO_CONFIRMADA;
+        $this->save();
+    }
+
+    public function rechazarPendiente(): void
+    {
+        if ($this->estado !== self::ESTADO_PENDIENTE) {
+            throw new DomainException('Solo se pueden rechazar reservas pendientes de pago.');
+        }
+
+        // El administrador libera una solicitud sin pago para que otra persona use ese horario.
+        $this->estado = self::ESTADO_CANCELADA;
+        $this->cancelada_en = now();
+        $this->save();
+    }
+
     public function cancelar(): void
     {
+        if (! in_array($this->estado, [self::ESTADO_PENDIENTE, self::ESTADO_CONFIRMADA], true)) {
+            throw new DomainException('Esta reserva ya no se puede cancelar.');
+        }
+
         $inicio = Carbon::parse($this->fecha)
             ->setTimeFromTimeString((string) $this->hora_inicio);
 
@@ -94,7 +144,7 @@ class Reserva extends Model
         $this->hora_fin = $fin->format('H:i:s');
 
         $cancha = Cancha::find($this->cancha_id);
-        if (!$cancha) {
+        if (! $cancha) {
             throw new DomainException('La cancha indicada no existe.');
         }
 
@@ -109,16 +159,21 @@ class Reserva extends Model
         $this->monto = number_format($montoCentavos / 100, 2, '.', '');
 
         // Un indice unique solo detecta duplicados exactos; aqui se revisan los solapes.
-        $solapada = static::query()
-            ->confirmadas()
+        $ocupaHorario = static::query()
+            ->bloqueanHorario()
             ->where('cancha_id', $this->cancha_id)
             ->whereDate('fecha', $this->fecha)
             ->where('hora_inicio', '<', $this->hora_fin)
             ->where('hora_fin', '>', $this->hora_inicio)
             ->exists();
 
-        if ($solapada && ($this->estado ?? self::ESTADO_CONFIRMADA) === self::ESTADO_CONFIRMADA) {
-            throw new DomainException('La cancha ya tiene una reserva confirmada que se solapa con ese horario.');
+        $estadoNuevoBloquea = in_array(
+            $this->estado ?? self::ESTADO_CONFIRMADA,
+            [self::ESTADO_PENDIENTE, self::ESTADO_CONFIRMADA],
+            true,
+        );
+        if ($ocupaHorario && $estadoNuevoBloquea) {
+            throw new DomainException('La cancha ya tiene una reserva pendiente o confirmada que se solapa con ese horario.');
         }
     }
 }

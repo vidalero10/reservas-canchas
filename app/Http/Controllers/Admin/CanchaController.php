@@ -7,6 +7,7 @@ use App\Models\Cancha;
 use App\Models\Deporte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -15,7 +16,6 @@ class CanchaController extends Controller
     public function index(): View
     {
         $canchas = Cancha::query()->with('deporte')->orderBy('nombre')->get();
-
         return view('admin.canchas.index', compact('canchas'));
     }
 
@@ -23,7 +23,6 @@ class CanchaController extends Controller
     {
         $cancha = new Cancha(['activa' => true]);
         $deportes = Deporte::query()->orderBy('nombre')->get();
-
         return view('admin.canchas.form', compact('cancha', 'deportes'));
     }
 
@@ -31,15 +30,16 @@ class CanchaController extends Controller
     {
         $datos = $this->validarCancha($request);
         $datos['activa'] = $request->boolean('activa');
+        if ($request->hasFile('imagen')) {
+            $datos['imagen'] = $request->file('imagen')->store('canchas', 'public');
+        }
         Cancha::create($datos);
-
         return redirect()->route('admin.canchas.index')->with('success', 'Cancha creada correctamente.');
     }
 
     public function edit(Cancha $cancha): View
     {
         $deportes = Deporte::query()->orderBy('nombre')->get();
-
         return view('admin.canchas.form', compact('cancha', 'deportes'));
     }
 
@@ -47,8 +47,16 @@ class CanchaController extends Controller
     {
         $datos = $this->validarCancha($request, $cancha);
         $datos['activa'] = $request->boolean('activa');
+        $imagenAnterior = $cancha->imagen;
+        if ($request->hasFile('imagen')) {
+            $datos['imagen'] = $request->file('imagen')->store('canchas', 'public');
+        } else {
+            unset($datos['imagen']);
+        }
         $cancha->update($datos);
-
+        if ($imagenAnterior && $request->hasFile('imagen')) {
+            Storage::disk('public')->delete($imagenAnterior);
+        }
         return redirect()->route('admin.canchas.index')->with('success', 'Cancha actualizada correctamente.');
     }
 
@@ -56,7 +64,6 @@ class CanchaController extends Controller
     {
         $cancha->activa = !$cancha->activa;
         $cancha->save();
-
         return back()->with('success', $cancha->activa ? 'Cancha activada.' : 'Cancha desactivada.');
     }
 
@@ -65,6 +72,8 @@ class CanchaController extends Controller
         return $request->validate([
             'deporte_id' => ['required', 'integer', 'exists:deportes,id'],
             'nombre' => ['required', 'string', 'max:255', Rule::unique('canchas', 'nombre')->ignore($cancha?->id)],
+            'descripcion' => ['nullable', 'string', 'max:2000'],
+            'imagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'tarifa_diurna' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:999999.99'],
             'tarifa_nocturna' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:999999.99'],
         ]);

@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             CanchaSeeder::class,
             ClienteSeeder::class,
             ReservaSeeder::class,
+            AdminSeeder::class,
         ]);
     }
 }
